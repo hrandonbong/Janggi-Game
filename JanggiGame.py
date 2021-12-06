@@ -66,25 +66,24 @@ class JanggiGame:
 
     def is_in_check(self,color):
         """Parameter of color in string, returns true if color is in check"""
-
-        #Functions use turn to determine moves, saving turn and will change it later
+        # Functions use turn to determine moves, saving turn and will change it later
         if self._turn == 'blue':
             temp_status = 'blue'
         else:
             temp_status = 'red'
 
-        #Creates a temporary board save so we can return back to the board before check is invoked
-        temp_board = [[],[],[],[],[],[],[],[],[],[]]
-        for n in range(0,10):
-            for o in range(0,9):
+        # Creates a temporary board save so we can return back to the board before check is invoked
+        temp_board = [[], [], [], [], [], [], [], [], [], []]
+        for n in range(0, 10):
+            for o in range(0, 9):
                 temp_board[n].append(self._set[n][o])
 
-        #Saving the dead list to copy back in later
+        # Saving the dead list to copy back in later
         temp_dead = []
-        for n in range(0,len(self._dead)):
+        for n in range(0, len(self._dead)):
             temp_dead.append(self._dead[n])
 
-        #Used to change what pieces we will be moving based on red or blue check
+        # Used to change what pieces we will be moving based on red or blue check
         if color == 'red':
             general = 'RGe'
             self._turn = 'blue'
@@ -115,7 +114,7 @@ class JanggiGame:
                                 current = self._board[i][j]
                                 self.move_chariot(current, next, i, j)
                                 if general in self._dead:
-                                    print(color,"is in check.",color,"make a move.")
+                                    print(color, "is in check.", color, "make a move.")
                                     self._set = temp_board
                                     self._dead = temp_dead
                                     self._turn = color
@@ -160,7 +159,7 @@ class JanggiGame:
                                     self._turn = color
                                     return True
 
-                    #Check Cannon
+                    # Check Cannon
                     for i in range(0, 10):
                         for j in range(0, 9):
                             if self._set[i][j] == cannon:
@@ -173,128 +172,156 @@ class JanggiGame:
                                     self._turn = color
                                     return True
 
-                    #nothing is in check
+                    # nothing is in check
                     self._set = temp_board
                     self._dead = temp_dead
                     self._turn = temp_status
                     return False
 
-        #Added in case somehow it breaks out of loop
+        # Added in case somehow it breaks out of loop
         self._set = temp_board
         self._dead = temp_dead
         self._turn = temp_status
         return False
 
 
-    def general_valid(self,current):
+    def general_valid(self):
         """Makes sure the generals do not face each other. Takes current location being moved
         and checks if there are any other pieces in that column, if not returns false and cannot
         move current piece."""
-        #if piece between generals tries to move
-        for i in range(0,4):
-            for j in range(3,6):
+        row1 = 0
+        col1 = None
+        row2 = 0
+        col2 = None
+        # if piece between generals tries to move
+        for i in range(0, 4):
+            for j in range(3, 6):
                 if self._set[i][j] == 'RGe':
-                    for k in range(7,10):
-                        if self._set[k][j] == 'BGe':
-                            for l in range(i,k):
-                                if self._board[l][j] == current:
-                                    for m in range(i+1,10):
-                                        if (self._set[m][j] in self._red_pieces \
-                                           or self._set[m][j] in self._blue_pieces) \
-                                            and (self._set[m][j] != 'BGe' and \
-                                                self._set[m][j] != 'RGe') and (m != l):
-                                            return True
-                                    return False
+                    row1 = i
+                    col1 = j
+                    break
+            if col1 is not None:
+                break
+        for k in range(7, 10):
+            for l in range(3,6)
+                if self._set[k][l] == 'BGe':
+                    row2 = k
+                    col2 = l
+                    break
+            if col2 is not None:
+                break
+
+        if col1 != col2:
+            return True
+
+        while row1 < row2:
+            if self._set[row][col1] in self._red_pieces or self._set[row][col1] in self._blue_pieces:
+                return True
+
+        return False
 
 
 
     def make_move(self,current,next):
         """Takes current location, and next location as parameters. Will update the board or return
         false for invalid moves."""
-        # print("Attempting: ",current, "->", next) #Used to check gradescope
         if self._game_status != 'UNFINISHED':
             return False
-
-        #skipping turn
+            # skipping turn
         if current == next:
             self.change_turn()
             return True
+        row1, col1 = self._board[current]
+        row2, col2 = self._board[next]
 
-        #Making sure general's do not face each other
-        valid = self.general_valid(current)
-        if valid == False:
+        # Making sure general's do not face each other
+        if self.general_valid():
             return False
 
-        #Moving pieces depending on what they are and finding it's coordinates
-        for i in range(0,10):
-            for j in range(0,9):
-                if self._board[i][j] == current:
-                    #Chariot
-                    if (self._set[i][j] == 'RC' and self._turn == 'red') or\
-                            (self._set[i][j] == 'BC'and self._turn == 'blue'):
-                        result = self.move_chariot(current, next,i,j)
-                        if result == False:
-                            return False
-                        self.change_turn()
-                        self.is_general_dead()
-                        return True
-                    #Elephant
-                    elif (self._set[i][j] == 'RE' and self._turn == 'red') or\
-                            (self._set[i][j] == 'BE'and self._turn == 'blue'):
-                        result = self.move_elephant(current, next,i,j)
-                        if result == False:
-                            return False
-                        self.change_turn()
-                        self.is_general_dead()
-                        return True
-                    #Horse
-                    elif (self._set[i][j] == 'RH' and self._turn == 'red') or \
-                            (self._set[i][j] == 'BH' and self._turn == 'blue'):
-                        result = self.move_horse(current, next,i,j)
-                        if result == False:
-                            return False
-                        self.change_turn()
-                        self.is_general_dead()
-                        return True
-                    #Guardian
-                    elif (self._set[i][j] == 'RG' and self._turn == 'red') or \
-                            (self._set[i][j] == 'BG' and self._turn == 'blue'):
-                        result = self.move_palace_pieces(current, next,i,j)
-                        if result == False:
-                            return False
-                        self.change_turn()
-                        self.is_general_dead()
-                        return True
-                    #General
-                    elif (self._set[i][j] == 'RGe' and self._turn == 'red') or \
-                            (self._set[i][j] == 'BGe' and self._turn == 'blue'):
-                        result = self.move_palace_pieces(current, next,i,j)
-                        if result == False:
-                            return False
-                        self.change_turn()
-                        self.is_general_dead()
-                        return True
-                    #Soldier
-                    elif (self._set[i][j] == 'RS' and self._turn == 'red') or \
-                            (self._set[i][j] == 'BS' and self._turn == 'blue'):
-                        result = self.move_soldier(current, next, i, j)
-                        if result == False:
-                            return False
-                        self.change_turn()
-                        self.is_general_dead()
-                        return True
-                    #Canon
-                    elif (self._set[i][j] == 'RCa' and self._turn == 'red') or \
-                            (self._set[i][j] == 'BCa' and self._turn == 'blue'):
-                        result = self.move_cannon(current, next, i, j)
-                        if result == False:
-                            return False
-                        self.change_turn()
-                        self.is_general_dead()
-                        return True
-                    else:
+        if self._turn == 'blue' and self._set[row1][col1] in self._blue_pieces:
+            #['BC','BE','BH','BG','BGe','BS','BCa']
+            if self.move_pieces(self._set[row1][col1],row1,col1,row2,col2):
+                if self._set[row1][col1] == 'BC':
+                    #Chariot moving
+                    result = self.move_chariot(row1,col1, row2, col2)
+                    if result == False:
                         return False
+                elif self._set[row1][col1] == 'BE':
+                    #Elephant moving
+                    result = self.move_elephant(row1,col1, row2, col2)
+                    if result == False:
+                        return False
+                elif self._set[row1][col1] == 'BH':
+                    #Horse
+                    result = self.move_horse(row1,col1, row2, col2)
+                    if result == False:
+                        return False
+                elif self._set[row1][col1] == 'BG':
+                    #Guard
+                    result = self.move_palace_pieces(current, next, row1, col1, row2, col2)
+                    if result == False:
+                        return False
+                elif self._set[row1][col1] == 'BGe':
+                    #General
+                    result = self.move_palace_pieces(current, next, row1, col1, row2, col2)
+                    if result == False:
+                        return False
+                elif self._set[row1][col1] == 'BS':
+                    #Soldier
+                    result = self.move_soldier(row1,col1, row2, col2)
+                    if result == False:
+                        return False
+                elif self._set[row1][col1] == 'BCa':
+                    #Cannon
+                    result = self.move_cannon(row1,col1, row2, col2)
+                    if result == False:
+                        return False
+                else:
+                    return False
+        if self._turn == 'red' and self._set[row1][col1] in self._red_pieces:
+            if self.move_pieces(self._set[row1][col1], row1, col1, row2, col2):
+                # ['RC','RE','RH','RG','RGe','RS','RCa']
+                if self._set[row1][col1] == 'RC':
+                    # Chariot moving
+                    result = self.move_chariot(row1, col1, row2, col2)
+                    if result == False:
+                        return False
+                elif self._set[row1][col1] == 'RE':
+                    # Elephant moving
+                    result = self.move_elephant(row1, col1, row2, col2)
+                    if result == False:
+                        return False
+                elif self._set[row1][col1] == 'RH':
+                    # Horse
+                    result = self.move_horse(row1, col1, row2, col2)
+                    if result == False:
+                        return False
+                elif self._set[row1][col1] == 'RG':
+                    # Guard
+                    result = self.move_palace_pieces(current, next, row1, col1, row2, col2)
+                    if result == False:
+                        return False
+                elif self._set[row1][col1] == 'RGe':
+                    # General
+                    result = self.move_palace_pieces(current, next, row1, col1, row2, col2)
+                    if result == False:
+                        return False
+                elif self._set[row1][col1] == 'RS':
+                    # Soldier
+                    result = self.move_soldier(row1, col1, row2, col2)
+                    if result == False:
+                        return False
+                elif self._set[row1][col1] == 'RCa':
+                    # Cannon
+                    result = self.move_cannon(row1, col1, row2, col2)
+                    if result == False:
+                        return False
+                else:
+                    return False
 
+        self.is_general_dead()
+        self.change_turn()
+        return True
 
     def is_general_dead(self):
         """Checks to see if during the move the general died"""
@@ -316,302 +343,264 @@ class JanggiGame:
         else:
             self._turn = 'blue'
 
-    def move_chariot(self,current,next,i,j):
+    def move_chariot(self,i,j,k,l):
         """Inputs: current location, next location, (i,j).
         Expected: output to move piece to next location, or return false for any other outcome"""
-        if self._set[i][j] == 'RC' or self._set[i][j] == 'BC':
-            if current == self._board[i][j]:
-                for k in range(0, 10):
-                    for l in range(0, 9):
-                        if self._board[k][l] == next:
-                            # Chariot must move horizontal
-                            if i == k or j == l:
-                                return self.move_pieces(self._set[i][j], i, j, k, l)
-                            # Chariot is in diagonals
-                            #Red palace diagonals
-                            elif current in self.red_diagonal and next in self.red_diagonal:
-                                if abs(i - k) > 2 or abs(j - l) > 2:
-                                    return False
-                                return self.move_pieces(self._set[i][j], i, j, k, l)
-                            #Blue palace dagonals
-                            elif current in self.blue_diagonal and next in self.blue_diagonal:
-                                if abs(i - k) > 2 or abs(j - l) > 2:
-                                    return False
-                                return self.move_pieces(self._set[i][j], i, j, k, l)
-
-                            else:
-                                return False
+        if i == k or j == l:
+            return self.move_pieces(self._set[i][j], i, j, k, l)
+            # Chariot is in diagonals
+            # Red palace diagonals
+        elif current in self.red_diagonal and next in self.red_diagonal:
+            if abs(i - k) > 2 or abs(j - l) > 2:
                 return False
+            return self.move_pieces(self._set[i][j], i, j, k, l)
+            # Blue palace dagonals
+        elif current in self.blue_diagonal and next in self.blue_diagonal:
+            if abs(i - k) > 2 or abs(j - l) > 2:
+                return False
+            return self.move_pieces(self._set[i][j], i, j, k, l)
+
+        else:
+            return False
 
 
-    def move_elephant(self,current,next,i,j):
+    def move_elephant(self,i,j,k,l):
         """Inputs: current location, next location, (i,j).
             Expected: output to move piece to next location, or return false for any other outcome"""
-        if self._set[i][j] == 'RE' or self._set[i][j] == 'BE':
-            if current == self._board[i][j]:
-                for k in range(0, 10):
-                    for l in range(0, 9):
-                        if self._board[k][l] == next:
-                            # Making sure nothing is blocking our piece
-                            #Moving up
-                            if i - k == 3 and i + 1 <= 9 and i - 1 >= 0:
-                                if self._set[i - 1][j] in self._blue_pieces or \
-                                        self._set[i - 1][j] in self._red_pieces:
-                                    return False
-                                elif j - l == 2 and j + 1 <= 8 and j - 1 >= 0:
-                                    if self._set[i - 2][j - 1] in self._blue_pieces or \
-                                            self._set[i - 2][j - 1] in self._red_pieces:
-                                        return False
-                                elif j - l == -2 and j + 1 <= 8 and j - 1 >= 0:
-                                    if self._set[i - 2][j + 1] in self._blue_pieces or \
-                                            self._set[i - 2][j + 1] in self._red_pieces:
-                                        return False
-                            #Moving down
-                            elif i - k == -3 and i + 1 <= 9 and i - 1 >= 0:
-                                if self._set[i + 1][j] in self._blue_pieces or \
-                                        self._set[i + 1][j] in self._red_pieces:
-                                    return False
-                                elif j - l == 2 and j + 1 <= 8 and j - 1 >= 0:
-                                    if self._set[i + 2][j - 1] in self._blue_pieces or \
-                                            self._set[i + 2][j - 1] in self._red_pieces:
-                                        return False
-                                elif j - l == -2 and j + 1 <= 8 and j - 1 >= 0:
-                                    if self._set[i + 2][j + 1] in self._blue_pieces or \
-                                            self._set[i + 2][j + 1] in self._red_pieces:
-                                        return False
-                            #Moving left
-                            elif j - l == 3 and j + 1 <= 8 and j - 1 >= 0:
-                                if self._set[i][j - 1] in self._blue_pieces or \
-                                        self._set[i][j - 1] in self._red_pieces:
-                                    return False
-                                elif i - k == 2 and j + 1 <= 9 and j - 1 >= 0:
-                                    if self._set[i + 1][j - 2] in self._blue_pieces or \
-                                            self._set[i + 1][j - 2] in self._red_pieces:
-                                        return False
-                                elif i - k == -2 and j + 1 <= 9 and j - 1 >= 0:
-                                    if self._set[i + 1][j + 2] in self._blue_pieces or \
-                                            self._set[i + 1][j + 2] in self._red_pieces:
-                                        return False
-                            #Moving right
-                            elif j - l == -3 and j + 1 <= 8 and j - 1 >= 0:
-                                if self._set[i][j + 1] in self._blue_pieces or \
-                                        self._set[i][j + 1] in self._red_pieces:
-                                    return False
-                                elif i - k == 2 and j + 1 <= 9 and j - 1 >= 0:
-                                    if self._set[i + 1][j - 2] in self._blue_pieces or \
-                                            self._set[i + 1][j - 2] in self._red_pieces:
-                                        return False
-                                elif i - k == -2 and j + 1 <= 9 and j - 1 >= 0:
-                                    if self._set[i + 1][j + 2] in self._blue_pieces or \
-                                            self._set[i + 1][j + 2] in self._red_pieces:
-                                        return False
 
-                            # Verify movement is in a valid direction, if true - move
-                            if ((i + 3 == k or i - 3 == k) and (j + 2 == l or j - 2 == l)) or \
-                                    ((i + 2 == k or i - 2 == k) and (j + 3 == l or j - 3 == l)):
-                                return self.move_pieces(self._set[i][j], i, j, k, l)
-
-                            else:
-                                return False
+        # Making sure nothing is blocking our piece
+        # Moving up
+        if i - k == 3 and i + 1 <= 9 and i - 1 >= 0:
+            if self._set[i - 1][j] in self._blue_pieces or \
+                    self._set[i - 1][j] in self._red_pieces:
                 return False
+            elif j - l == 2 and j + 1 <= 8 and j - 1 >= 0:
+                if self._set[i - 2][j - 1] in self._blue_pieces or \
+                        self._set[i - 2][j - 1] in self._red_pieces:
+                    return False
+            elif j - l == -2 and j + 1 <= 8 and j - 1 >= 0:
+                if self._set[i - 2][j + 1] in self._blue_pieces or \
+                        self._set[i - 2][j + 1] in self._red_pieces:
+                    return False
+        # Moving down
+        elif i - k == -3 and i + 1 <= 9 and i - 1 >= 0:
+            if self._set[i + 1][j] in self._blue_pieces or \
+                    self._set[i + 1][j] in self._red_pieces:
+                return False
+            elif j - l == 2 and j + 1 <= 8 and j - 1 >= 0:
+                if self._set[i + 2][j - 1] in self._blue_pieces or \
+                        self._set[i + 2][j - 1] in self._red_pieces:
+                    return False
+            elif j - l == -2 and j + 1 <= 8 and j - 1 >= 0:
+                if self._set[i + 2][j + 1] in self._blue_pieces or \
+                        self._set[i + 2][j + 1] in self._red_pieces:
+                    return False
+        # Moving left
+        elif j - l == 3 and j + 1 <= 8 and j - 1 >= 0:
+            if self._set[i][j - 1] in self._blue_pieces or \
+                    self._set[i][j - 1] in self._red_pieces:
+                return False
+            elif i - k == 2 and j + 1 <= 9 and j - 1 >= 0:
+                if self._set[i + 1][j - 2] in self._blue_pieces or \
+                        self._set[i + 1][j - 2] in self._red_pieces:
+                    return False
+            elif i - k == -2 and j + 1 <= 9 and j - 1 >= 0:
+                if self._set[i + 1][j + 2] in self._blue_pieces or \
+                        self._set[i + 1][j + 2] in self._red_pieces:
+                    return False
+        # Moving right
+        elif j - l == -3 and j + 1 <= 8 and j - 1 >= 0:
+            if self._set[i][j + 1] in self._blue_pieces or \
+                    self._set[i][j + 1] in self._red_pieces:
+                return False
+            elif i - k == 2 and j + 1 <= 9 and j - 1 >= 0:
+                if self._set[i + 1][j - 2] in self._blue_pieces or \
+                        self._set[i + 1][j - 2] in self._red_pieces:
+                    return False
+            elif i - k == -2 and j + 1 <= 9 and j - 1 >= 0:
+                if self._set[i + 1][j + 2] in self._blue_pieces or \
+                        self._set[i + 1][j + 2] in self._red_pieces:
+                    return False
+
+        # Verify movement is in a valid direction, if true - move
+        if ((i + 3 == k or i - 3 == k) and (j + 2 == l or j - 2 == l)) or \
+                ((i + 2 == k or i - 2 == k) and (j + 3 == l or j - 3 == l)):
+            return self.move_pieces(self._set[i][j], i, j, k, l)
+
+        else:
+            return False
 
 
-    def move_horse(self, current, next,i,j):
+    def move_horse(self, i,j,k,l):
         """Inputs: current location, next location, (i,j).
         Expected: output to move piece to next location, or return false for any other outcome"""
-        if self._set[i][j] == 'RH' or self._set[i][j] == 'BH':
-            if current == self._board[i][j]:
-                for k in range(0, 10):
-                    for l in range(0, 9):
-                        if self._board[k][l] == next:
-                            # Making sure nothing is blocking our piece
-                            if i - k == 2 and i + 1 <= 9 and i - 1 >= 0:
-                                if self._set[i - 1][j] in self._blue_pieces or \
-                                        self._set[i - 1][j] in self._red_pieces:
-                                    return False
-
-                            elif i - k == -2 and i + 1 <= 9 and i - 1 >= 0:
-                                if self._set[i + 1][j] in self._blue_pieces or \
-                                        self._set[i + 1][j] in self._red_pieces:
-                                    return False
-
-                            elif j - l == 2 and j + 1 <= 8 and j - 1 >= 0:
-                                if self._set[i][j - 1] in self._blue_pieces or \
-                                        self._set[i][j - 1] in self._red_pieces:
-                                    return False
-
-                            elif j - l == -2 and j + 1 <= 8 and j - 1 >= 0:
-                                if self._set[i][j + 1] in self._blue_pieces or \
-                                        self._set[i][j + 1] in self._red_pieces:
-                                    return False
-
-                            # Verify movement is in a valid direction
-                            if ((i + 2 == k or i - 2 == k) and (j + 1 == l or j - 1 == l)) or \
-                                    ((i + 1 == k or i - 1 == k) and (j + 2 == l or j - 2 == l)):
-                                return self.move_pieces(self._set[i][j], i, j, k, l)
-
-                            else:
-                                return False
+        # Making sure nothing is blocking our piece
+        if i - k == 2 and i + 1 <= 9 and i - 1 >= 0:
+            if self._set[i - 1][j] in self._blue_pieces or \
+                    self._set[i - 1][j] in self._red_pieces:
                 return False
 
+        elif i - k == -2 and i + 1 <= 9 and i - 1 >= 0:
+            if self._set[i + 1][j] in self._blue_pieces or \
+                    self._set[i + 1][j] in self._red_pieces:
+                return False
 
-    def move_palace_pieces(self,current,next,i,j):
+        elif j - l == 2 and j + 1 <= 8 and j - 1 >= 0:
+            if self._set[i][j - 1] in self._blue_pieces or \
+                    self._set[i][j - 1] in self._red_pieces:
+                return False
+
+        elif j - l == -2 and j + 1 <= 8 and j - 1 >= 0:
+            if self._set[i][j + 1] in self._blue_pieces or \
+                    self._set[i][j + 1] in self._red_pieces:
+                return False
+
+        # Verify movement is in a valid direction
+        if ((i + 2 == k or i - 2 == k) and (j + 1 == l or j - 1 == l)) or \
+                ((i + 1 == k or i - 1 == k) and (j + 2 == l or j - 2 == l)):
+            return self.move_pieces(self._set[i][j], i, j, k, l)
+
+        else:
+            return False
+
+
+    def move_palace_pieces(self,current,next,i,j,k,l):
         """Inputs: current location, next location, (i,j).
         Expected: output to move piece to next location, or return false for any other outcome"""
-        #Making sure the palace pieces are being moved and moved only in the palace
         if current in self._red_palace:
             if next in self._red_palace:
                 if self._set[i][j] == 'RG' or self._set[i][j] == 'RGe':
-
-                    if current == self._board[i][j]:
-                        for k in range(0, 10):
-                            for l in range(0, 9):
-                                if next == self._board[k][l]:
-                                    if abs(i-k) == 1 or abs(j-l) == 1:
-                                        return self.move_pieces(self._set[i][j],i,j,k,l)
-                                    else:
-                                        return False
-                    return False
+                    if next == self._board[k][l]:
+                        if abs(i - k) == 1 or abs(j - l) == 1:
+                            return self.move_pieces(self._set[i][j], i, j, k, l)
+                        else:
+                            return False
 
         elif current in self._blue_palace:
             if next in self._blue_palace:
                 if self._set[i][j] == 'BG' or self._set[i][j] == 'BGe':
-                    if current == self._board[i][j]:
-                        for k in range(0, 10):
-                            for l in range(0, 9):
-                                if next == self._board[k][l]:
-                                    if abs(i - k) == 1 or abs(j - l) == 1:
-                                        return self.move_pieces(self._set[i][j],i,j,k,l)
-                    return False
+                    if next == self._board[k][l]:
+                        if abs(i - k) == 1 or abs(j - l) == 1:
+                            return self.move_pieces(self._set[i][j], i, j, k, l)
         return False
 
-    def move_soldier(self,current,next,i,j):
+    def move_soldier(self,i,j,k,l):
         """Moves the soldier either forward or sideways, but not backwards"""
-        for k in range(0, 10):
-            for l in range(0, 9):
-                if self._board[k][l] == next:
-                    # moving a red soldier
-                    if ((i + 1 == k and j == l) or (i == k and j - 1 == l) or \
-                            (i == k and j + 1 == l)) and self._turn == 'red':
-                        self.move_pieces(self._set[i][j], i, j, k, l)
-                        return True
+        # moving a red soldier
+        if ((i + 1 == k and j == l) or (i == k and j - 1 == l) or
+            (i == k and j + 1 == l)) and self._turn == 'red':
+            self.move_pieces(self._set[i][j], i, j, k, l)
+            return True
 
-                    # Moving a blue soldier
-                    elif ((i - 1 == k and j == l) or (i == k and j - 1 == l) or \
-                            (i == k and j + 1 == l)) and self._turn == 'blue':
-                        self.move_pieces(self._set[i][j], i, j, k, l)
-                        return True
+        # Moving a blue soldier
+        elif ((i - 1 == k and j == l) or (i == k and j - 1 == l) or
+              (i == k and j + 1 == l)) and self._turn == 'blue':
+            self.move_pieces(self._set[i][j], i, j, k, l)
+            return True
 
-                    # Moving Diag in Palace
-                    elif (next in self._red_palace or next in self._blue_palace) and \
-                            (current in self._red_palace or current in self._blue_palace):
-                        if (i + 1 == k and j + 1 == l) or (i + 1 == k and j - 1 == l) \
-                                and self._turn == 'red':
-                            self.move_pieces(self._set[i][j], i, j, k, l)
-                            return True
+        # Moving Diag in Palace
+        elif (next in self._red_palace or next in self._blue_palace) and \
+                (current in self._red_palace or current in self._blue_palace):
+            if (i + 1 == k and j + 1 == l) or (i + 1 == k and j - 1 == l) \
+                    and self._turn == 'red':
+                self.move_pieces(self._set[i][j], i, j, k, l)
+                return True
 
-                        elif (i - 1 == k and j + 1 == l) or (i - 1 == k and j - 1 == l) \
-                                and self._turn == 'blue':
-                            self.move_pieces(self._set[i][j], i, j, k, l)
-                            return True
+            elif (i - 1 == k and j + 1 == l) or (i - 1 == k and j - 1 == l) \
+                    and self._turn == 'blue':
+                self.move_pieces(self._set[i][j], i, j, k, l)
+                return True
 
-                        else:
-                            return False
-                    else:
-                        return False
+            else:
+                return False
+        else:
+            return False
 
 
-
-
-
-    def move_cannon(self,current,next,i,j):
+    def move_cannon(self,i,j,k,l):
         """Current is not used. Moves the cannon piece and makes sure only 1 piece exists between
         it and its target location. If there is another piece, cannon will not move."""
-        for k in range(0, 10):
-            for l in range(0, 9):
-                if self._board[k][l] == next:
-                    if i-k == 0:
-                        #moves right
-                        if l-j > 0:
-                            for m in range(j+1,l):
-                                if (self._set[i][m] in self._red_pieces or self._set[i][m] in self._blue_pieces)\
-                                        and (self._set[i][m] != 'RCa' and self._set[i][m] != 'BCa'):
-                                    #Cannons cannot jump over cannons
-                                    for n in range(m+1,l):
-                                        if (self._set[i][n] in self._red_pieces or self._set[i][n] in self._blue_pieces) \
-                                                and (self._set[i][n] != 'RCa' and self._set[i][n] != 'BCa'):
-                                            return False
-                                    else:
-                                        self.move_pieces(self._set[i][j], i, j, k, l)
-                                        return True
-                        #moves left
-                        elif l-j < 0:
-                            for m in range(l+1,j):
-                                if (self._set[i][m] in self._red_pieces or self._set[i][m] in self._blue_pieces) \
-                                        and (self._set[i][m] != 'RCa' and self._set[i][m] != 'BCa'):
-                                    # Cannons cannot jump over cannons
-                                    for n in range(m + 1, j):
-                                        if (self._set[i][n] in self._red_pieces or self._set[i][n] in self._blue_pieces) \
-                                                and (self._set[i][n] != 'RCa' and self._set[i][n] != 'BCa'):
-                                            return False
-                                    else:
-                                        self.move_pieces(self._set[i][j], i, j, k, l)
-                                        return True
+        if i - k == 0:
+            # moves right
+            if l - j > 0:
+                for m in range(j + 1, l):
+                    if (self._set[i][m] in self._red_pieces or self._set[i][m] in self._blue_pieces) \
+                            and (self._set[i][m] != 'RCa' and self._set[i][m] != 'BCa'):
+                        # Cannons cannot jump over cannons
+                        for n in range(m + 1, l):
+                            if (self._set[i][n] in self._red_pieces or self._set[i][n] in self._blue_pieces) \
+                                    and (self._set[i][n] != 'RCa' and self._set[i][n] != 'BCa'):
+                                return False
                         else:
-                            return False
+                            self.move_pieces(self._set[i][j], i, j, k, l)
+                            return True
+            # moves left
+            elif l - j < 0:
+                for m in range(l + 1, j):
+                    if (self._set[i][m] in self._red_pieces or self._set[i][m] in self._blue_pieces) \
+                            and (self._set[i][m] != 'RCa' and self._set[i][m] != 'BCa'):
+                        # Cannons cannot jump over cannons
+                        for n in range(m + 1, j):
+                            if (self._set[i][n] in self._red_pieces or self._set[i][n] in self._blue_pieces) \
+                                    and (self._set[i][n] != 'RCa' and self._set[i][n] != 'BCa'):
+                                return False
+                        else:
+                            self.move_pieces(self._set[i][j], i, j, k, l)
+                            return True
+            else:
+                return False
 
-                    elif j-l == 0:
-                        # moves up
-                        if i - k > 0:
-                            for m in range(k+1,i):
-                                if (self._set[m][j] in self._red_pieces or self._set[m][j] in self._blue_pieces) \
-                                        and (self._set[m][j] != 'RCa' and self._set[m][j] != 'BCa'):
-                                    # Cannons cannot jump over cannons
-                                    for n in range(m + 1, i):
-                                        if (self._set[n][j] in self._red_pieces or self._set[n][j] in self._blue_pieces) \
-                                                and (self._set[n][j] != 'RCa' and self._set[n][j] != 'BCa'):
-                                            return False
-                                    else:
-                                        self.move_pieces(self._set[i][j], i, j, k, l)
-                                        return True
-                        # moves down
-                        elif i - k < 0:
-                            for m in range(i + 1, k):
-                                if (self._set[m][j] in self._red_pieces or self._set[m][j] in self._blue_pieces) \
-                                        and (self._set[m][j] != 'RCa' and self._set[m][j] != 'BCa'):
-                                    # Cannons cannot jump over cannons
-                                    for n in range(m + 1, k):
-                                        if (self._set[n][j] in self._red_pieces or self._set[n][j] in self._blue_pieces) \
-                                                and (self._set[n][j] != 'RCa' and self._set[n][j] != 'BCa'):
-                                            return False
-                                    else:
-                                        self.move_pieces(self._set[i][j], i, j, k, l)
-                                        return True
+        elif j - l == 0:
+            # moves up
+            if i - k > 0:
+                for m in range(k + 1, i):
+                    if (self._set[m][j] in self._red_pieces or self._set[m][j] in self._blue_pieces) \
+                            and (self._set[m][j] != 'RCa' and self._set[m][j] != 'BCa'):
+                        # Cannons cannot jump over cannons
+                        for n in range(m + 1, i):
+                            if (self._set[n][j] in self._red_pieces or self._set[n][j] in self._blue_pieces) \
+                                    and (self._set[n][j] != 'RCa' and self._set[n][j] != 'BCa'):
+                                return False
                         else:
-                            return False
+                            self.move_pieces(self._set[i][j], i, j, k, l)
+                            return True
+            # moves down
+            elif i - k < 0:
+                for m in range(i + 1, k):
+                    if (self._set[m][j] in self._red_pieces or self._set[m][j] in self._blue_pieces) \
+                            and (self._set[m][j] != 'RCa' and self._set[m][j] != 'BCa'):
+                        # Cannons cannot jump over cannons
+                        for n in range(m + 1, k):
+                            if (self._set[n][j] in self._red_pieces or self._set[n][j] in self._blue_pieces) \
+                                    and (self._set[n][j] != 'RCa' and self._set[n][j] != 'BCa'):
+                                return False
+                        else:
+                            self.move_pieces(self._set[i][j], i, j, k, l)
+                            return True
+            else:
+                return False
 
-                    #Moving diagonal in the palace
-                    elif self._board[i][j] in self._red_palace or self._board[i][j] in self._blue_palace:
-                        if j-l > 0:
-                            #checking to make sure there is something between cannon and jump point
-                            if self._set[i+1][j-1] in self._red_pieces or \
-                                self._set[i+1][j - 1] in self._blue_pieces or \
-                                self._set[i - 1][j - 1] in self._red_pieces or \
-                                self._set[i - 1][j - 1] in self._blue_pieces:
-                                self.move_pieces(self._set[i][j], i, j, k, l)
-                                return True
-                        elif j-l < 0:
-                            if self._set[i+1][j + 1] in self._red_pieces or \
-                                self._set[i+1][j + 1] in self._blue_pieces or \
-                                self._set[i-1][j + 1] in self._red_pieces or \
-                                self._set[i - 1][j + 1] in self._blue_pieces:
-                                self.move_pieces(self._set[i][j], i, j, k, l)
-                                return True
-                        else:
-                            return False
-                    else:
-                        return False
-        return False
+            # Moving diagonal in the palace
+        elif self._board[i][j] in self._red_palace or self._board[i][j] in self._blue_palace:
+            if j - l > 0:
+                # checking to make sure there is something between cannon and jump point
+                if self._set[i + 1][j - 1] in self._red_pieces or \
+                        self._set[i + 1][j - 1] in self._blue_pieces or \
+                        self._set[i - 1][j - 1] in self._red_pieces or \
+                        self._set[i - 1][j - 1] in self._blue_pieces:
+                    self.move_pieces(self._set[i][j], i, j, k, l)
+                    return True
+            elif j - l < 0:
+                if self._set[i + 1][j + 1] in self._red_pieces or \
+                        self._set[i + 1][j + 1] in self._blue_pieces or \
+                        self._set[i - 1][j + 1] in self._red_pieces or \
+                        self._set[i - 1][j + 1] in self._blue_pieces:
+                    self.move_pieces(self._set[i][j], i, j, k, l)
+                    return True
+            else:
+                return False
+        else:
+            return False
 
 
     def move_pieces(self,piece,i,j,k,l):
